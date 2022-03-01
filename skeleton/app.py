@@ -123,19 +123,26 @@ def register_user():
 	try:
 		email=request.form.get('email')
 		password=request.form.get('password')
+		f_name = request.form.get('first name')
+		l_name = request.form.get('last name')
+		dob = request.form.get('date of birth')
+		gender = request.form.get('gender')
+		hometown = request.form.get('hometown')
+
 	except:
 		print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
 		return flask.redirect(flask.url_for('register'))
 	cursor = conn.cursor()
 	test =  isEmailUnique(email)
 	if test:
-		print(cursor.execute("INSERT INTO Users (email, password) VALUES ('{0}', '{1}')".format(email, password)))
+		print(cursor.execute("INSERT INTO Users (email, password, f_name, l_name, dob, gender, hometown) \
+		VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')".format(email, password, f_name, l_name, dob, gender, hometown)))
 		conn.commit()
 		#log user in
 		user = User()
 		user.id = email
 		flask_login.login_user(user)
-		return render_template('hello.html', name=email, message='Account Created!')
+		return render_template('hello.html', name=user.id, message='Account Created!')
 	else:
 		print("couldn't find all tokens")
 		return flask.redirect(flask.url_for('register'))
