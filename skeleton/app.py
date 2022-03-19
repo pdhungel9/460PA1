@@ -135,7 +135,7 @@ def register_user():
 	cursor = conn.cursor()
 	test =  isEmailUnique(email)
 	if test:
-		print(cursor.execute("INSERT INTO Users (email, password, f_name, l_name, dob, gender, hometown) \
+		print(cursor.execute("INSERT INTO Users (email, password, first_name, last_name, birth_date, gender, hometown) \
 		VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')".format(email, password, f_name, l_name, dob, gender, hometown)))
 		conn.commit()
 		#log user in
@@ -167,6 +167,12 @@ def isEmailUnique(email):
 		return True
 #end login code
 
+## ANOTHER NEW FUNCTION TO GET ALBUMS !!!! 
+def getUsersAlbums(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT name FROM Albums WHERE user_id = '{0}'".format(uid))
+	return cursor.fetchall()
+
 @app.route('/profile')
 @flask_login.login_required
 def protected():
@@ -178,6 +184,23 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
+# NEW STUFF!!!
+@app.route('/album', methods=['GET','POST'])
+@flask_login.login_required
+def create_album():
+	if request.method == 'POST':
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+		name = request.form.get('album')
+		date = request.form.get('date')
+		cursor = conn.cursor()
+		cursor.execute('''INSERT INTO Albums (user_id, name, date) VALUES (%s, %s, %s)''', (uid, name, date))
+		conn.commit()
+		return render_template('album.html', name=flask_login.current_user.id, message='Album Created!', albums=getUsersAlbums(uid))
+	else:
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+		try_albums = getUsersAlbums(uid)
+		return render_template('album.html', albums=try_albums)
+
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
 def upload_file():
@@ -187,7 +210,7 @@ def upload_file():
 		caption = request.form.get('caption')
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption) VALUES (%s, %s, %s )''', (photo_data, uid, caption))
+		cursor.execute('''INSERT INTO Photos (data, user_id, caption) VALUES (%s, %s, %s )''', (photo_data, uid, caption))
 		conn.commit()
 		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid), base64=base64)
 	#The method is GET so we return a  HTML form to upload the a photo.
@@ -199,7 +222,7 @@ def upload_file():
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare')
+	return render_template('hello.html', message='Welcome to Photoshare')
 
 
 if __name__ == "__main__":
