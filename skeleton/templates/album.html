@@ -1,5 +1,4 @@
 
-    <!-- gonna change this part so it displays their ALBUMS? instead -->
 {%if albums %}
 <h2>Here are your albums</h2>
     <ul>
@@ -19,10 +18,22 @@
                 <input type="text" name="album" required='true' /><br />
                 <label for="date">Enter date:</label>
                 <input type="text" name="date" required='true' /><br />
-                <input type="submit" value="Create Album" />
+                <input type="submit" value="Submit" />
             </form>
+    </body>
+
+    <h3>Delete an Album</h3>
+    <body>
+      <form method="post" enctype="multipart/form-data" action="/album">
+        <label for="album">Enter the name of the album you want to delete:</label>
+        <input type="text" name="album_to_delete" required='true' /><br />
+        <input type="submit" value="Submit" />
+      </form>
     </body>
 
     <a href='/profile'>Back to Profile</a></li>
 
 </head>
+
+
+
