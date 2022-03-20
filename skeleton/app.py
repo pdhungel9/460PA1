@@ -188,25 +188,27 @@ def allowed_file(filename):
 @app.route('/album', methods=['POST'])
 @flask_login.login_required
 def manange_album():
+	
 	# option 1: user is creating an album
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	to_delete = request.form.get('album_to_delete')
 	cursor = conn.cursor()
-	if to_delete != None:
-		cursor.execute('''DELETE FROM Albums WHERE user_id = %s AND name = %s''', (uid, to_delete))
-		conn.commit()
-		return render_template('album.html', name=flask_login.current_user.id, message='Album Deleted!', albums=getUsersAlbums(uid))
-	
-	
 	name = request.form.get('album')
 	date = request.form.get('date')
 	if name != None and date != None:
 		cursor.execute('''INSERT INTO Albums (user_id, name, date) VALUES (%s, %s, %s)''', (uid, name, date))
 		conn.commit()
 		return render_template('album.html', name=flask_login.current_user.id, message='Album Created!', albums=getUsersAlbums(uid))
-	
-	return render_template('album.html', name=flask_login.current_user.id, albums=getUsersAlbums(uid))
+
 	# option 2: user is deleting an album
+	to_delete = request.form.get('album_to_delete')
+	if to_delete != None:
+		cursor.execute('''DELETE FROM Albums WHERE user_id = %s AND name = %s''', (uid, to_delete))
+		conn.commit()
+		return render_template('album.html', name=flask_login.current_user.id, message='Album Deleted!', albums=getUsersAlbums(uid))
+	
+	# if they're not executing either options then just show their albums
+	return render_template('album.html', name=flask_login.current_user.id, albums=getUsersAlbums(uid))
+	
 
 
 	
