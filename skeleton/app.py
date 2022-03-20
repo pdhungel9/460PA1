@@ -173,6 +173,14 @@ def getUsersAlbums(uid):
 	cursor.execute("SELECT name FROM Albums WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall()
 
+# Helper method to make sure a user only views/edits albums that actually exist
+def isValidAlbum(album_name, uid):
+	cursor = conn.cursor()
+	if cursor.execute("SELECT * FROM ALBUMS WHERE user_id = '{0}' AND name = '{1}'".format(uid, album_name)):
+	   return True
+	else:
+		return False
+
 @app.route('/profile')
 @flask_login.login_required
 def protected():
@@ -188,7 +196,7 @@ def allowed_file(filename):
 @app.route('/album', methods=['POST'])
 @flask_login.login_required
 def manange_album():
-	
+
 	# option 1: user is creating an album
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	cursor = conn.cursor()
@@ -206,10 +214,18 @@ def manange_album():
 		conn.commit()
 		return render_template('album.html', name=flask_login.current_user.id, message='Album Deleted!', albums=getUsersAlbums(uid))
 	
+	view = request.form.get('view_album')
+	print("view is:", view)
+	if view != None:
+		valid_album = isValidAlbum(view, uid)
+		print("is the album valid?", valid_album)
+		if valid_album:
+			return render_template('upload.html', name=flask_login.current_user.id, album_name=view)
+		else:
+			return render_template('album.html', name=flask_login.current_user.id, message='Not a valid album name. Try again.', albums=getUsersAlbums(uid))
+
 	# if they're not executing either options then just show their albums
 	return render_template('album.html', name=flask_login.current_user.id, albums=getUsersAlbums(uid))
-	
-
 
 	
 @app.route('/album', methods=['GET'])
@@ -218,7 +234,6 @@ def display_albums():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	try_albums = getUsersAlbums(uid)
 	return render_template('album.html', albums=try_albums)
-
 
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
