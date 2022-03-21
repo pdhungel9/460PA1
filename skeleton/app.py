@@ -147,9 +147,9 @@ def register_user():
 		print("couldn't find all tokens")
 		return flask.redirect(flask.url_for('register'))
 
-def getUsersPhotos(uid):
+def getUsersPhotos(uid, album_id):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))
+	cursor.execute("SELECT data, photo_id, caption FROM Photos WHERE user_id = '{0}' AND albums_id = '{1}'".format(uid, album_id))
 	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
 
 def getUserIdFromEmail(email):
@@ -167,7 +167,7 @@ def isEmailUnique(email):
 		return True
 #end login code
 
-## ANOTHER NEW FUNCTION TO GET ALBUMS !!!! 
+# Helper method to get a user's albums
 def getUsersAlbums(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT name FROM Albums WHERE user_id = '{0}'".format(uid))
@@ -192,7 +192,6 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
-# NEW STUFF!!!
 @app.route('/album', methods=['POST'])
 @flask_login.login_required
 def manange_album():
@@ -214,17 +213,20 @@ def manange_album():
 		conn.commit()
 		return render_template('album.html', name=flask_login.current_user.id, message='Album Deleted!', albums=getUsersAlbums(uid))
 	
+	# option 3: user is viewing the details of an album
 	view = request.form.get('view_album')
-	print("view is:", view)
 	if view != None:
 		valid_album = isValidAlbum(view, uid)
 		print("is the album valid?", valid_album)
 		if valid_album:
-			return render_template('upload.html', name=flask_login.current_user.id, album_name=view)
+			# get album id 
+			cursor.execute('''SELECT albums_id FROM Albums WHERE user_id = %s AND name = %s LIMIT 1''', (uid,view))
+			a_id = cursor.fetchall()[0][0]
+			return render_template('upload.html', name=flask_login.current_user.id, album_name=view, album_id=a_id, photos=getUsersPhotos(uid, a_id), base64=base64)
 		else:
 			return render_template('album.html', name=flask_login.current_user.id, message='Not a valid album name. Try again.', albums=getUsersAlbums(uid))
 
-	# if they're not executing either options then just show their albums
+	# if they're not any options then just show their albums
 	return render_template('album.html', name=flask_login.current_user.id, albums=getUsersAlbums(uid))
 
 	
@@ -235,21 +237,36 @@ def display_albums():
 	try_albums = getUsersAlbums(uid)
 	return render_template('album.html', albums=try_albums)
 
-@app.route('/upload', methods=['GET', 'POST'])
+@app.route('/upload', methods=['POST'])
 @flask_login.login_required
 def upload_file():
-	if request.method == 'POST':
-		uid = getUserIdFromEmail(flask_login.current_user.id)
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+
+	# uploading a photo
+	caption = request.form.get('caption')
+	if caption != None:
 		imgfile = request.files['photo']
-		caption = request.form.get('caption')
+		album_id = request.form.get('album_id')
 		photo_data =imgfile.read()
-		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Photos (data, user_id, caption) VALUES (%s, %s, %s )''', (photo_data, uid, caption))
+		cursor.execute('''INSERT INTO Photos (data, user_id, caption, albums_id) VALUES (%s, %s, %s, %s)''', (photo_data, uid, caption, album_id))
 		conn.commit()
-		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid), base64=base64)
-	#The method is GET so we return a  HTML form to upload the a photo.
-	else:
-		return render_template('upload.html')
+		return render_template('upload.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid,album_id), base64=base64)
+		
+	#deleting a photo
+	photo_id = request.form.get('photo_id')
+	if photo_id != None:
+		a_id = request.form.get('album_id')
+		cursor.execute('''DELETE FROM Photos WHERE photo_id = %s''', (photo_id))
+		conn.commit()
+		return render_template('upload.html', message='photo deleted',photos=getUsersPhotos(uid,a_id), album_id=a_id, base64=base64)
+
+	return render_template('hello.html', message='photo deleted')
+
+@app.route('/upload', methods=['GET'])
+@flask_login.login_required
+def album_details():
+	return render_template('upload.html')
 #end photo uploading code
 
 
