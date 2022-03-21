@@ -184,7 +184,7 @@ def isValidAlbum(album_name, uid):
 #Function to display friend list
 def getUsersFriends(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT user_id2 FROM Friends WHERE user_id1 = '{0}'".format(uid))
+	cursor.execute("SELECT first_name FROM (SELECT user_id2 FROM Friends WHERE user_id1 = '{0}') AS List LEFT JOIN Users on Users.user_id = List.user_id2".format(uid))
 	return cursor.fetchall()
 
 def isValidFriend(friend_name, uid):
@@ -267,7 +267,7 @@ def manage_friends():
 			friend_uid = getUserIdFromEmail(search)
 			cursor.execute('''INSERT INTO Friends (user_id1, user_id2) VALUES (%s, %s)''', (uid, friend_uid))
 			conn.commit()
-			return render_template('friends.html', name=flask_login.current_user.id, message='You are now friends with (%s)'.format(search), friends=getUsersFriends(uid), friend=search)
+			return render_template('friends.html', name=flask_login.current_user.id, message=f'You are now friends with {search}', friends=getUsersFriends(uid), friend=search)
 		else:
 			return render_template('friends.html', name=flask_login.current_user.id, message='Not a valid friend name. Try again.', friends=getUsersFriends(uid), friend=search)
 
