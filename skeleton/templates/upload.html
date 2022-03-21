@@ -8,15 +8,16 @@
         <li>{{photo[2]}}<br>
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
     {% endfor %}
+    
     </ul>
 {% endif %}
 
 <head>
-    <title>Add a photo to this album</title>
+    <title>Add photo </title>
 </head>
     <body>
         <div class="title">
-            <h1>Upload a photo to Photoshare</h1>
+            <h1>Upload a photo to the album {{album_name}}</h1>
         </div>
             <form method="post" enctype="multipart/form-data" action="/upload">
                 <label for="photo">Select photo:</label>
