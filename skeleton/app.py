@@ -181,6 +181,26 @@ def isValidAlbum(album_name, uid):
 	else:
 		return False
 
+#Function to display friend list
+def getUsersFriends(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id2 FROM Friends WHERE user_id1 = '{0}'".format(uid))
+	return cursor.fetchall()
+
+def isValidFriend(friend_name, uid):
+	cursor = conn.cursor()
+	if cursor.execute("SELECT user_id2 FROM FRIENDS WHERE user_id1 = '{0}' AND user_id2 = '{1}'".format(uid, friend_name)):
+	   return True
+	else:
+		return False
+
+def isValidUser(friend):
+	cursor = conn.cursor()
+	if cursor.execute("SELECT * FROM Users WHERE email = '{0}'".format(friend)):
+	   return True
+	else:
+		return False
+
 @app.route('/profile')
 @flask_login.login_required
 def protected():
@@ -234,6 +254,30 @@ def display_albums():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	try_albums = getUsersAlbums(uid)
 	return render_template('album.html', albums=try_albums)
+
+@app.route('/friends', methods=['POST'])
+@flask_login.login_required
+def manage_friends():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	search = request.form.get('search_friends')
+
+	if search != None:
+		valid_user = isValidUser(search)
+		if valid_user:
+			friend_uid = getUserIdFromEmail(search)
+			cursor.execute('''INSERT INTO Friends (user_id1, user_id2) VALUES (%s, %s)''', (uid, friend_uid))
+			conn.commit()
+			return render_template('friends.html', name=flask_login.current_user.id, message='You are now friends with (%s)'.format(search), friends=getUsersFriends(uid), friend=search)
+		else:
+			return render_template('friends.html', name=flask_login.current_user.id, message='Not a valid friend name. Try again.', friends=getUsersFriends(uid), friend=search)
+
+	return render_template('friends.html', name=flask_login.current_user.id, friends=getUsersFriends(uid), friend=search)
+
+@app.route('/friends', methods=['GET'])
+@flask_login.login_required
+def display_friends():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	return render_template('friends.html', friends=getUsersFriends(uid))
 
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
