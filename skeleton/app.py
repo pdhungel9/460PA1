@@ -227,15 +227,16 @@ def isValidUser(friend):
 #recommendation function
 def getFriendRecommendation(uid):
 	query = '''
-		SELECT DISTINCT user_id2, COUNT(*)
+	 	SELECT first_name FROM 
+		(SELECT DISTINCT user_id2, COUNT(*)
 		FROM Friends 
 		WHERE user_id1 
 		IN 
 			(SELECT user_id2 
 			FROM Friends 
-			WHERE user_id2 = '{0}')
+			WHERE user_id1 = '{0}')
 		GROUP BY user_id2
-		ORDER BY COUNT(*) DESC'''.format(uid)
+		ORDER BY COUNT(*) DESC) AS list1 LEFT JOIN USERS ON Users.user_id = list1.user_id2'''.format(uid)
 	cursor = conn.cursor()
 	cursor.execute(query)
 	return cursor.fetchall()
@@ -290,7 +291,8 @@ def display_albums():
 def manage_friends():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	search = request.form.get('search_friends')
-
+	
+	print(getFriendRecommendation(uid))
 	if search != None:
 		valid_user = isValidUser(search)
 		if valid_user:
@@ -300,14 +302,17 @@ def manage_friends():
 			return render_template('friends.html', name=flask_login.current_user.id, message=f'You are now friends with {search}', friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
 		else:
 			return render_template('friends.html', name=flask_login.current_user.id, message='Not a valid friend name. Try again.', friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
-
+	
+	print(getFriendRecommendation(uid))
 	return render_template('friends.html', name=flask_login.current_user.id, friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
 
 @app.route('/friends', methods=['GET'])
 @flask_login.login_required
 def display_friends():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('friends.html', friends=getUsersFriends(uid))
+	print("FRIEND RECS !!!!" , getFriendRecommendation(uid))
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	return render_template('friends.html', friends=getUsersFriends(uid),recs = getFriendRecommendation(uid))
 
 #Comment Code
 @app.route('/comments', methods=['POST'])
