@@ -224,6 +224,24 @@ def isValidUser(friend):
 	else:
 		return False
 
+#recommendation function
+def getFriendRecommendation(uid):
+	query = '''
+		SELECT DISTINCT user_id2, COUNT(*)
+		FROM Friends 
+		WHERE user_id1 
+		IN 
+			(SELECT user_id2 
+			FROM Friends 
+			WHERE user_id2 = '{0}')
+		GROUP BY user_id2
+		ORDER BY COUNT(*) DESC'''.format(uid)
+	cursor = conn.cursor()
+	cursor.execute(query)
+	return cursor.fetchall()
+
+#comment helper functions
+
 @app.route('/profile')
 @flask_login.login_required
 def protected():
@@ -279,17 +297,37 @@ def manage_friends():
 			friend_uid = getUserIdFromEmail(search)
 			cursor.execute('''INSERT INTO Friends (user_id1, user_id2) VALUES (%s, %s)''', (uid, friend_uid))
 			conn.commit()
-			return render_template('friends.html', name=flask_login.current_user.id, message=f'You are now friends with {search}', friends=getUsersFriends(uid), friend=search)
+			return render_template('friends.html', name=flask_login.current_user.id, message=f'You are now friends with {search}', friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
 		else:
-			return render_template('friends.html', name=flask_login.current_user.id, message='Not a valid friend name. Try again.', friends=getUsersFriends(uid), friend=search)
+			return render_template('friends.html', name=flask_login.current_user.id, message='Not a valid friend name. Try again.', friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
 
-	return render_template('friends.html', name=flask_login.current_user.id, friends=getUsersFriends(uid), friend=search)
+	return render_template('friends.html', name=flask_login.current_user.id, friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
 
 @app.route('/friends', methods=['GET'])
 @flask_login.login_required
 def display_friends():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	return render_template('friends.html', friends=getUsersFriends(uid))
+
+#Comment Code
+@app.route('/comments', methods=['POST'])
+@flask_login.login_required
+def manage_comments():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	comment = request.form.get('comment')
+	#get photo id
+	#get comment id
+	#get text
+	commenter = None
+	if comment != None:
+		cursor.execute('''INSERT INTO Comments (comment_id, photo_id, user_id, text) VALUES (%s, %s, %s, %s)''', (uid, friend_uid))
+		conn.commit()
+		return render_template('browse.html', name=flask_login.current_user.id, message= 'new comment made')
+	else:
+		return render_template('browse.html', name=flask_login.current_user.id, message='Not a valid comment. Try again.')
+
+	return render_template('browse.html', name=flask_login.current_user.id)
+
 
 @app.route('/upload/<album_name>', methods=['POST'])
 @flask_login.login_required

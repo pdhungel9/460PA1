@@ -40,3 +40,14 @@
         <input type="submit" value="Submit" /> <br />
     </form>
 </body>
+
+{%if recs %}
+<h2>Here are your friend recommendations:</h2>
+<ul>
+    {% for rec in recs %}
+    <li>{{rec[0]}}</li>
+    {% endfor %}
+</ul>
+{%else%}
+<h2>There are no mutual friends to recommend!</h2>
+{%endif%}
