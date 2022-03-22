@@ -27,10 +27,15 @@
 <p> Go to <a href='/profile'>profile?</a></p>
 {% endif %}
 
+
+<ul><li><a href='/browse'>Browse all photos</a></li></ul>
+{% if name %}
 <ul>
-<li><a href='/album'>View and Create Albums</a></li>
-<li><a href='/friends'>My Friends</a></li>
-<li><a href='/browse'>Browse all photos</a></li>
+<li><a href='/album'>View and Create Albums</a></li><br />
+<li><a href='/friends'>My Friends</a></li> <br />
 <li><a href='/logout'>Logout</a></li>
-<li><a href='/'>Home</a></li>
+</ul>
+{% endif %}
+
+<ul><li><a href='/'>Home</a></li></ul>
 </ul>
