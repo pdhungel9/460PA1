@@ -347,7 +347,6 @@ def upload_file():
 		else:
 			return render_template('upload.html', message='not a valid photo id, try again')
 
-
 	return render_template('hello.html', message='photo deleted')
 
 @app.route('/upload', methods=['GET'])
