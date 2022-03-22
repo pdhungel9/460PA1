@@ -1,5 +1,12 @@
-<h1>View Photos with Tag {{tag}}</h1>
+<h1>View Photos with Tag "{{tag}}"</h1>
 
+{% if default %}
+<h3><a href='/tags/{{tag}}/userview'>view your photos tagged as "{{tag}}"</a></h3>
+<h3><a href='/tags/{{tag}}/all'>view all photos tagged as "{{tag}}"</a></h3>
+{% endif %}
+
+
+{% if userview %}
 {% if user_photos %}
 <h2>Here are your photos tagged with {{tag}} </h2>
     <ul>
@@ -13,7 +20,9 @@
 {% else %}
 <h2>You don't have any photos tagged with {{tag}} yet</h2>
 {% endif %}
+{% endif %}
 
+{% if all %}
 {% if all_photos %}
 <h2>Here are all photos in photoshare with tag {{tag}}</h2>
     <ul>
@@ -24,4 +33,9 @@
     {% endfor %}
     
     </ul>
+{% else %}
+<h2>There aren't any photos in photoshare tagged with {{tag}} yet</h2>
 {% endif %}
+{% endif %}
+
+<a href='/album'>Back to Albums</a></li>

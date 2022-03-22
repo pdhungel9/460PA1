@@ -353,24 +353,31 @@ def all_photos():
 	return render_template('browse.html', photos=cursor.fetchall(), base64=base64)
 
 # viewing tags 
-@app.route("/tags/<tag>", methods=['GET', 'POST'])
+@app.route("/tags/<tag>/<view>", methods=['GET', 'POST'])
 @flask_login.login_required
-def see_tagged_photos(tag):
+def see_tagged_photos(tag, view):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	cursor = conn.cursor()
 	# get the tag id of that tag 
+	
 	tag_id = doesTagExist(tag)
 
-	# get the photos 
-	cursor.execute("SELECT data, Photos.photo_id, caption FROM Tagged, Photos WHERE Tagged.photo_id = Photos.photo_id AND tag_id = '{0}' \
-	AND Photos.photo_id IN (SELECT photo_id FROM PHOTOS WHERE user_id = '{1}')".format(tag_id, uid))
-	
-	user_pics = cursor.fetchall()
-	
-	cursor.execute("SELECT data, Photos.photo_id, caption FROM Tagged, Photos WHERE tag_id = '{0}'".format(tag_id))
-	all_pics = cursor.fetchall()
+	# if view is default, then let them choose if they want to see user photos 
+	# with tag or ALL photos with that tag 
+	if view == 'default':
+	   return render_template('tags.html', default=view, tag=tag)
 
-	return render_template('tags.html', tag=tag, user_photos=user_pics, all_photos=all_pics, base64=base64)
+	elif view == 'userview':
+	# get the user's photos with that tag
+		cursor.execute("SELECT data, Photos.photo_id, caption FROM Tagged, Photos WHERE Tagged.photo_id = Photos.photo_id AND tag_id = '{0}' \
+		AND Photos.photo_id IN (SELECT photo_id FROM PHOTOS WHERE user_id = '{1}')".format(tag_id, uid))
+		user_pics = cursor.fetchall()
+		return render_template('tags.html', tag=tag, userview=view, user_photos=user_pics, base64=base64)
+
+	elif view == 'all':
+		cursor.execute("SELECT DISTINCT data, Photos.photo_id, caption FROM Tagged, Photos WHERE tag_id = '{0}'".format(tag_id))
+		all_pics = cursor.fetchall()
+		return render_template('tags.html', tag=tag, all=view, all_photos=all_pics, base64=base64)
 
 
 #default page
