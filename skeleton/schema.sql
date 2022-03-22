@@ -35,7 +35,7 @@ CREATE TABLE Albums(
 );
 
 CREATE TABLE Tags(
- tag_id INTEGER,
+ tag_id INTEGER AUTO_INCREMENT,
  name VARCHAR(100),
  PRIMARY KEY (tag_id)
 );
@@ -87,3 +87,4 @@ CREATE TABLE Likes(
 SELECT * from Users;
 SELECT * from Albums;
 SELECT * from Photos;
+SELECT * from Tagged;

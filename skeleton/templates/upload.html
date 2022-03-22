@@ -40,11 +40,20 @@
     <form method="post" enctype="multipart/form-data" action="/upload">
         <label for="photo">Enter photo id:</label>
         <input type="text" name="photo_id" required='true' /><br />
-        <label for="photo">Enter album id:</label>
+        <label for="album">Enter album id:</label>
         <input type="text" name="album_id" required='true' /><br />
         <input type="submit" value="Delete"/> 
     </form>
 
+    <h1>Add a tag to a photo</h1>
+    <form method="post" enctype="multipart/form-data" action="/upload">
+        <label for="photo">Enter photo id:</label>
+        <input type="text" name="phototag_id" required='true' /><br />
+        <label for="tags">Enter one photo tag:</label>
+        <input type="text" name="tag" required='true' /><br />
+        <input type="submit" value="Add tag"/> 
+    </form>
+    
     <a href='/album'>Back to all albums</a></li>
 </body>
 </head>

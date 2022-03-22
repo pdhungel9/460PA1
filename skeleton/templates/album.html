@@ -8,11 +8,20 @@
 <h2>Here are your albums</h2>
     <ul>
       {% for album in albums %}
-        <li>{{album[0]}}</li>
+        <li>{{album[0]}}</a></li>
       {% endfor %}
     </ul>
 {%else%}
 <h2>You haven't created any albums yet!</h2>
+{%endif%}
+
+{% if tags %}
+<h2>here are your tags</h2>
+<ul>
+  {% for tag in tags %}
+    <li><a href='/tags/{{tag[0]}}'>{{tag[0]}}</a></li>
+  {% endfor %}
+</ul>
 {%endif%}
 
 <head>
@@ -44,8 +53,6 @@
         <input type="submit" value="Submit" /> <br />
       </form>
     </body>
-
-
 
     <a href='/profile'>Back to Profile</a></li>
 
