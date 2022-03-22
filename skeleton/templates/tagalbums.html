@@ -1,0 +1,13 @@
+{% if tags %}
+<h2>here are your tags</h2>
+<ul>
+  {% for tag in tags %}
+    <li><a href='/tags/{{tag[0]}}/default'>{{tag[0]}}</a></li>
+  {% endfor %}
+</ul>
+{% else %}
+<h3>you don't have any tagged photos yet</h3>
+
+{%endif%}
+
+<a href='/tag'>Back to tag options</a>
