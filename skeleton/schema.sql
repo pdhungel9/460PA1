@@ -88,3 +88,4 @@ SELECT * from Users;
 SELECT * from Albums;
 SELECT * from Photos;
 SELECT * from Tagged;
+SELECT * from Tags;
