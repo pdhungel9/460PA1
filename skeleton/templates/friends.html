@@ -31,12 +31,23 @@
     <title>Search for friends</title>
 </head>
 
-<h3>Search for Friends</h3>
+<h3>Search for friends</h3>
 
 <body>
     <form method="post" enctype="multipart/form-data" action="/friends">
-        <label for="search">search for friends:</label>
+        <label for="search">Search by email address:</label>
         <input type="text" name="search_friends" required='true' />
         <input type="submit" value="Submit" /> <br />
     </form>
 </body>
+
+{%if recs %}
+<h2>Here are your friend recommendations:</h2>
+<ul>
+    {% for rec in recs %}
+    <li>{{rec[0]}}</li>
+    {% endfor %}
+</ul>
+{%else%}
+<h2>There are no mutual friends to recommend!</h2>
+{%endif%}

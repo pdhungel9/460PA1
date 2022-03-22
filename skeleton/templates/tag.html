@@ -1,0 +1,29 @@
+{% if message %}
+<h2>{{message}}</h2>
+{% endif %}
+
+<h3>Search Tags</h3>
+    <body>
+            <form method="post" enctype="multipart/form-data" action="/tag">
+                <label for="tagname">Enter tag:</label>
+                <input type="text" name="tag" required='true' />
+                <input type="submit" value="Submit" /> <br />
+            </form>
+    </body>
+
+{%if photos %}
+<h2>Here are all photos in photoshare with tag {{tag}}</h2>
+        <ul>
+        {% for photo in photos %}
+            <li>{{photo[2]}}<br>
+            <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        {% endfor %}
+        </ul>
+{% endif %}
+
+
+<h3><a href='/tags/mostpopular'>View most popular tags</a></h3>
+
+<h3><a href='/tagalbums'>View Your Tagged Photos</a></h3>
+
+<a href='/'>Home</a></li>

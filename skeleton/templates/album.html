@@ -14,20 +14,6 @@
 <h2>You haven't created any albums yet!</h2>
 {%endif%}
 
-{% if tags %}
-<h2>here are your tags</h2>
-<ul>
-  {% for tag in tags %}
-    <li><a href='/tags/{{tag[0]}}/default'>{{tag[0]}}</a></li>
-  {% endfor %}
-</ul>
-{% else %}
-<h3>you don't have any tagged photos yet</h3>
-
-{%endif%}
-
-<a href='/tags/mostpopular'>view most popular tags</a></h3>
-
 <head>
     <h3>Create an Album</h3>
     <body>

@@ -224,6 +224,25 @@ def isValidUser(friend):
 	else:
 		return False
 
+#recommendation function
+def getFriendRecommendation(uid):
+	query = '''
+	 	SELECT first_name FROM 
+		(SELECT DISTINCT user_id2, COUNT(*)
+		FROM Friends 
+		WHERE user_id1 
+		IN 
+			(SELECT user_id2 
+			FROM Friends 
+			WHERE user_id1 = '{0}')
+		GROUP BY user_id2
+		ORDER BY COUNT(*) DESC) AS list1 LEFT JOIN USERS ON Users.user_id = list1.user_id2'''.format(uid)
+	cursor = conn.cursor()
+	cursor.execute(query)
+	return cursor.fetchall()
+
+#comment helper functions
+
 @app.route('/profile')
 @flask_login.login_required
 def protected():
@@ -257,7 +276,7 @@ def manange_album():
 		return render_template('album.html', name=flask_login.current_user.id, message='Album Deleted!', albums=getUsersAlbums(uid))
 	
 	# if they're not any options then just show their albums
-	return render_template('album.html', name=flask_login.current_user.id, albums=getUsersAlbums(uid), tags=user_tags(uid))
+	return render_template('album.html', name=flask_login.current_user.id, albums=getUsersAlbums(uid))
 
 	
 @app.route('/album', methods=['GET'])
@@ -265,31 +284,55 @@ def manange_album():
 def display_albums():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	try_albums = getUsersAlbums(uid)
-	return render_template('album.html', albums=try_albums, tags=user_tags(uid))
+	return render_template('album.html', albums=try_albums)
 
 @app.route('/friends', methods=['POST'])
 @flask_login.login_required
 def manage_friends():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	search = request.form.get('search_friends')
-
+	
+	print(getFriendRecommendation(uid))
 	if search != None:
 		valid_user = isValidUser(search)
 		if valid_user:
 			friend_uid = getUserIdFromEmail(search)
 			cursor.execute('''INSERT INTO Friends (user_id1, user_id2) VALUES (%s, %s)''', (uid, friend_uid))
 			conn.commit()
-			return render_template('friends.html', name=flask_login.current_user.id, message=f'You are now friends with {search}', friends=getUsersFriends(uid), friend=search)
+			return render_template('friends.html', name=flask_login.current_user.id, message=f'You are now friends with {search}', friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
 		else:
-			return render_template('friends.html', name=flask_login.current_user.id, message='Not a valid friend name. Try again.', friends=getUsersFriends(uid), friend=search)
-
-	return render_template('friends.html', name=flask_login.current_user.id, friends=getUsersFriends(uid), friend=search)
+			return render_template('friends.html', name=flask_login.current_user.id, message='Not a valid friend name. Try again.', friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
+	
+	print(getFriendRecommendation(uid))
+	return render_template('friends.html', name=flask_login.current_user.id, friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
 
 @app.route('/friends', methods=['GET'])
 @flask_login.login_required
 def display_friends():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('friends.html', friends=getUsersFriends(uid))
+	print("FRIEND RECS !!!!" , getFriendRecommendation(uid))
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	return render_template('friends.html', friends=getUsersFriends(uid),recs = getFriendRecommendation(uid))
+
+#Comment Code
+@app.route('/comments', methods=['POST'])
+@flask_login.login_required
+def manage_comments():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	comment = request.form.get('comment')
+	#get photo id
+	#get comment id
+	#get text
+	commenter = None
+	if comment != None:
+		cursor.execute('''INSERT INTO Comments (comment_id, photo_id, user_id, text) VALUES (%s, %s, %s, %s)''', (uid, friend_uid))
+		conn.commit()
+		return render_template('browse.html', name=flask_login.current_user.id, message= 'new comment made')
+	else:
+		return render_template('browse.html', name=flask_login.current_user.id, message='Not a valid comment. Try again.')
+
+	return render_template('browse.html', name=flask_login.current_user.id)
+
 
 @app.route('/upload/<album_name>', methods=['POST'])
 @flask_login.login_required
@@ -333,7 +376,6 @@ def upload_file(album_name):
 			return render_template('upload.html', message='tag added!', album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
 		else:
 			return render_template('upload.html', message='not a valid photo id, try again', album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
-
 
 	return render_template('hello.html', message='photo deleted')
 
@@ -384,7 +426,6 @@ def see_tagged_photos(tag, view):
 
 # most popular tag function
 @app.route("/tags/<view>", methods=['GET', 'POST'])
-@flask_login.login_required
 def most_popular_tags(view):
 	print("VIEW IS", view)
 	cursor = conn.cursor()
@@ -394,6 +435,56 @@ def most_popular_tags(view):
 	# "SELECT COUNT(*), tag_id FROM Tagged GROUP BY tag_id ORDER BY tag_id DESC")
 	names = cursor.fetchall()
 	return render_template('tags.html', most_popular=view,names=names )
+	
+@app.route("/tag", methods=['GET'])
+def tag_home():
+	return render_template('tag.html')
+
+@app.route("/tag", methods=['POST'])
+def tag_home_two():
+	search_for = request.form.get('tag').split()
+	if len(search_for) != 2:
+		return render_template('tag.html', message="Error! You must enter two tags separated by a space")
+	tag_id_1 = None
+	tag_id_2 = None
+
+	cursor = conn.cursor()
+
+	if cursor.execute("SELECT Tags.tag_id FROM Tagged, Tags WHERE Tagged.tag_id = Tags.tag_id AND Tags.name = '{0}'".format(search_for[0])):
+		tag_id_1 = cursor.fetchone()[0]
+	
+	if cursor.execute("SELECT Tags.tag_id FROM Tagged, Tags WHERE Tagged.tag_id = Tags.tag_id AND Tags.name = '{0}'".format(search_for[1])):
+		tag_id_2 = cursor.fetchone()[0]
+	
+	if tag_id_1 != None and tag_id_2 != None:
+
+		# photos for one tag:
+		#cursor.execute("SELECT P.data, P.photo_id, P.caption FROM PHOTOS P WHERE P.photo_id IN \
+		#(SELECT photo_id FROM Tagged WHERE tag_id = %s)", tag_id)
+		#all_pics = cursor.fetchall()
+		print("tag_id_1 is", tag_id_1, "tag_id_2 is", tag_id_2)
+		# find the photos that have 2 tags using self join
+		cursor.execute("SELECT Ta1.photo_id FROM Tags T1, Tagged Ta1, Tags T2, Tagged Ta2 \
+			WHERE T1.tag_id = Ta1.tag_id AND T2.tag_id = Ta2.tag_id AND T1.name = '%s' AND T2.name='%s'", (tag_id_1, tag_id_2))
+		
+		results = cursor.fetchall()
+		print("the results are", results)
+		return render_template('tag.html', tag=search_for, photos=results, base64=base64)
+	
+	print("THESE ARE THE TAG IDS", tag_id_1, tag_id_2)
+	if tag_id_1 == None or tag_id_2 == None:
+		message = "at least one of the tags you entered doesn't exist in the DB"
+	else:
+		message = "there are no photos in the DB with both the tags " + search_for[0] + " and" + search_for[1]
+	
+	return render_template('tag.html', message=message)
+
+@app.route("/tagalbums", methods=['GET', 'POST'])
+@flask_login.login_required
+def view_all_tagalbums():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	tags=user_tags(uid)
+	return render_template('tagalbums.html', tags=tags)
 	
 
 #default page
