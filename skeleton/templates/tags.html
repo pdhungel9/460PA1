@@ -1,0 +1,27 @@
+<h1>View Photos with Tag {{tag}}</h1>
+
+{% if user_photos %}
+<h2>Here are your photos tagged with {{tag}} </h2>
+    <ul>
+    {% for photo in user_photos %}
+
+        <li>{{photo[2]}}<br>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+    {% endfor %}
+    
+    </ul>
+{% else %}
+<h2>You don't have any photos tagged with {{tag}} yet</h2>
+{% endif %}
+
+{% if all_photos %}
+<h2>Here are all photos in photoshare with tag {{tag}}</h2>
+    <ul>
+    {% for photo in all_photos %}
+
+        <li>{{photo[2]}}<br>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+    {% endfor %}
+    
+    </ul>
+{% endif %}

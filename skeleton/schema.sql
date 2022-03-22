@@ -35,19 +35,19 @@ CREATE TABLE Albums(
 );
 
 CREATE TABLE Tags(
- tag_id INTEGER,
+ tag_id INTEGER AUTO_INCREMENT,
  name VARCHAR(100),
  PRIMARY KEY (tag_id)
 );
 
 CREATE TABLE Photos(
- photo_id INTEGER,
+ photo_id INTEGER AUTO_INCREMENT,
  caption VARCHAR(100),
  data LONGBLOB,
  albums_id INTEGER NOT NULL,
  user_id INTEGER NOT NULL,
  PRIMARY KEY (photo_id),
- FOREIGN KEY (albums_id) REFERENCES Albums (albums_id),
+ FOREIGN KEY (albums_id) REFERENCES Albums (albums_id) ON DELETE CASCADE,
  FOREIGN KEY (user_id) REFERENCES Users (user_id)
 );
 
@@ -86,3 +86,5 @@ CREATE TABLE Likes(
 
 SELECT * from Users;
 SELECT * from Albums;
+SELECT * from Photos;
+SELECT * from Tagged;

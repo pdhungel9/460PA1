@@ -147,9 +147,9 @@ def register_user():
 		print("couldn't find all tokens")
 		return flask.redirect(flask.url_for('register'))
 
-def getUsersPhotos(uid):
+def getUsersPhotos(uid, album_id):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, picture_id, caption FROM Pictures WHERE user_id = '{0}'".format(uid))
+	cursor.execute("SELECT data, photo_id, caption FROM Photos WHERE user_id = '{0}' AND albums_id = '{1}'".format(uid, album_id))
 	return cursor.fetchall() #NOTE return a list of tuples, [(imgdata, pid, caption), ...]
 
 def getUserIdFromEmail(email):
@@ -167,7 +167,7 @@ def isEmailUnique(email):
 		return True
 #end login code
 
-## ANOTHER NEW FUNCTION TO GET ALBUMS !!!! 
+# Helper method to get a user's albums
 def getUsersAlbums(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT name FROM Albums WHERE user_id = '{0}'".format(uid))
@@ -180,6 +180,30 @@ def isValidAlbum(album_name, uid):
 	   return True
 	else:
 		return False
+  
+# helper method that checks if a tag already exists, and if it doesn't adds it to the DB
+def doesTagExist(tag_name):
+	cursor = conn.cursor()
+	if cursor.execute("SELECT Tags.tag_id FROM Tagged, Tags WHERE Tagged.tag_id = Tags.tag_id AND Tags.name = '{0}'".format(tag_name)):
+		return cursor.fetchone()[0]
+	else:
+		# add the tag_name to tags!
+		cursor.execute('''INSERT INTO Tags (name) VALUES (%s)''', tag_name)
+		conn.commit()
+		cursor.execute('''SELECT tag_id FROM Tags WHERE name = %s''', tag_name)
+		return cursor.fetchone()[0]
+
+def user_tags(uid):
+	cursor = conn.cursor()
+	cursor.execute('''SELECT Tags.name FROM Tagged, Tags WHERE Tagged.tag_id = Tags.tag_id AND Tagged.photo_id IN 
+	(SELECT photo_id FROM Photos WHERE user_id = %s)''', uid)
+	return cursor.fetchall()
+
+def isValidPhotoid(photo_id, uid):
+	cursor = conn.cursor()
+	if cursor.execute('''SELECT * FROM Photos WHERE photo_id = %s AND user_id = %s''', (photo_id, uid)):
+	   return True
+	return False
 
 #Function to display friend list
 def getUsersFriends(uid):
@@ -212,7 +236,6 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
-# NEW STUFF!!!
 @app.route('/album', methods=['POST'])
 @flask_login.login_required
 def manange_album():
@@ -234,18 +257,21 @@ def manange_album():
 		conn.commit()
 		return render_template('album.html', name=flask_login.current_user.id, message='Album Deleted!', albums=getUsersAlbums(uid))
 	
+	# option 3: user is viewing the details of an album
 	view = request.form.get('view_album')
-	print("view is:", view)
 	if view != None:
 		valid_album = isValidAlbum(view, uid)
 		print("is the album valid?", valid_album)
 		if valid_album:
-			return render_template('upload.html', name=flask_login.current_user.id, album_name=view)
+			# get album id 
+			cursor.execute('''SELECT albums_id FROM Albums WHERE user_id = %s AND name = %s LIMIT 1''', (uid,view))
+			a_id = cursor.fetchall()[0][0]
+			return render_template('upload.html', name=flask_login.current_user.id, album_name=view, album_id=a_id, photos=getUsersPhotos(uid, a_id), base64=base64)
 		else:
 			return render_template('album.html', name=flask_login.current_user.id, message='Not a valid album name. Try again.', albums=getUsersAlbums(uid))
 
-	# if they're not executing either options then just show their albums
-	return render_template('album.html', name=flask_login.current_user.id, albums=getUsersAlbums(uid))
+	# if they're not any options then just show their albums
+	return render_template('album.html', name=flask_login.current_user.id, albums=getUsersAlbums(uid), tags=user_tags(uid))
 
 	
 @app.route('/album', methods=['GET'])
@@ -253,7 +279,7 @@ def manange_album():
 def display_albums():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	try_albums = getUsersAlbums(uid)
-	return render_template('album.html', albums=try_albums)
+	return render_template('album.html', albums=try_albums, tags=user_tags(uid))
 
 @app.route('/friends', methods=['POST'])
 @flask_login.login_required
@@ -282,26 +308,85 @@ def display_friends():
 @app.route('/upload', methods=['GET', 'POST'])
 @flask_login.login_required
 def upload_file():
-	if request.method == 'POST':
-		uid = getUserIdFromEmail(flask_login.current_user.id)
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+	# uploading a photo
+	
+	caption = request.form.get('caption')
+	if caption != None:
 		imgfile = request.files['photo']
-		caption = request.form.get('caption')
+		album_id = request.form.get('album_id')
 		photo_data =imgfile.read()
-		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Photos (data, user_id, caption) VALUES (%s, %s, %s )''', (photo_data, uid, caption))
+		cursor.execute('''INSERT INTO Photos (data, user_id, caption, albums_id) VALUES (%s, %s, %s, %s)''', (photo_data, uid, caption, album_id))
 		conn.commit()
-		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid), base64=base64)
-	#The method is GET so we return a  HTML form to upload the a photo.
-	else:
-		return render_template('upload.html')
+		return render_template('upload.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid,album_id), base64=base64)
+		
+	#deleting a photo
+	photo_id = request.form.get('photo_id')
+	if photo_id != None:
+		a_id = request.form.get('album_id')
+		cursor.execute('''DELETE FROM Photos WHERE photo_id = %s''', (photo_id))
+		conn.commit()
+		return render_template('upload.html', message='photo deleted',photos=getUsersPhotos(uid,a_id), album_id=a_id, base64=base64)
+
+	# adding a tag to a photo
+	photo_id = request.form.get('phototag_id')
+	if photo_id != None:
+		valid = isValidPhotoid(photo_id, uid)
+		if valid:
+			tag = request.form.get('tag')
+		
+			# call helper function
+			tag_id = doesTagExist(tag)
+
+			# then need to add photo, tag into the tagged DB 
+			cursor.execute('''INSERT INTO TAGGED (photo_id, tag_id) VALUES (%s, %s)''', (photo_id, tag_id))
+			conn.commit()
+		
+			return render_template('upload.html', message='tag added!')
+		else:
+			return render_template('upload.html', message='not a valid photo id, try again')
+
+
+	return render_template('hello.html', message='photo deleted')
+
+@app.route('/upload', methods=['GET'])
+@flask_login.login_required
+def album_details():
+	return render_template('upload.html')
 #end photo uploading code
 
+# browsing photos - for anyone visiting the site even if not registered
+@app.route('/browse', methods=['GET', 'POST'])
+def all_photos():
+	cursor = conn.cursor()
+	cursor.execute("SELECT data, photo_id, caption FROM Photos")
+	return render_template('browse.html', photos=cursor.fetchall(), base64=base64)
+
+# viewing tags 
+@app.route("/tags/<tag>", methods=['GET', 'POST'])
+@flask_login.login_required
+def see_tagged_photos(tag):
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+	# get the tag id of that tag 
+	tag_id = doesTagExist(tag)
+
+	# get the photos 
+	cursor.execute("SELECT data, Photos.photo_id, caption FROM Tagged, Photos WHERE Tagged.photo_id = Photos.photo_id AND tag_id = '{0}' \
+	AND Photos.photo_id IN (SELECT photo_id FROM PHOTOS WHERE user_id = '{1}')".format(tag_id, uid))
+	
+	user_pics = cursor.fetchall()
+	
+	cursor.execute("SELECT data, Photos.photo_id, caption FROM Tagged, Photos WHERE tag_id = '{0}'".format(tag_id))
+	all_pics = cursor.fetchall()
+
+	return render_template('tags.html', tag=tag, user_photos=user_pics, all_photos=all_pics, base64=base64)
 
 #default page
 @app.route("/", methods=['GET'])
 def hello():
 	return render_template('hello.html', message='Welcome to Photoshare')
-
 
 if __name__ == "__main__":
 	#this is invoked when in the shell  you run

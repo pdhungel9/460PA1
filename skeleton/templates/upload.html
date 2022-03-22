@@ -1,5 +1,9 @@
 <!-- author ben lawson (balawson@bu.edu) -->
 
+{% if message %}
+<h2>{{message}}</h2>
+{% endif %}
+
 {% if photos %}
 <h2>Here are your photos</h2>
     <ul>
@@ -10,20 +14,46 @@
     {% endfor %}
     
     </ul>
+{% else %}
+<h2>You haven't added any photos to this album yet!</h2>
 {% endif %}
 
 <head>
     <title>Add photo </title>
-</head>
     <body>
         <div class="title">
-            <h1>Upload a photo to the album {{album_name}}</h1>
+            <h1>Upload a photo to the album {{album_name}} (with album id = {{album_id}} )</h1>
         </div>
             <form method="post" enctype="multipart/form-data" action="/upload">
                 <label for="photo">Select photo:</label>
                 <input type="file" name="photo" required='true' /><br />
                 <label for="caption">Please caption:</label>
                 <input type="text" name="caption" required='true' /><br />
+                <label for="id">Album ID:</label>
+                <input type="text" name="album_id" required='true' /><br />
                 <input type="submit" value="Upload" />
             </form>
     </body>
+
+    <body>
+    <h1>Delete a photo from {{album_name}}</h1>
+    <form method="post" enctype="multipart/form-data" action="/upload">
+        <label for="photo">Enter photo id:</label>
+        <input type="text" name="photo_id" required='true' /><br />
+        <label for="album">Enter album id:</label>
+        <input type="text" name="album_id" required='true' /><br />
+        <input type="submit" value="Delete"/> 
+    </form>
+
+    <h1>Add a tag to a photo</h1>
+    <form method="post" enctype="multipart/form-data" action="/upload">
+        <label for="photo">Enter photo id:</label>
+        <input type="text" name="phototag_id" required='true' /><br />
+        <label for="tags">Enter one photo tag:</label>
+        <input type="text" name="tag" required='true' /><br />
+        <input type="submit" value="Add tag"/> 
+    </form>
+    
+    <a href='/album'>Back to all albums</a></li>
+</body>
+</head>
