@@ -21,7 +21,12 @@
     <li><a href='/tags/{{tag[0]}}/default'>{{tag[0]}}</a></li>
   {% endfor %}
 </ul>
+{% else %}
+<h2>you don't have any tagged photos yet</h2>
+
 {%endif%}
+
+<a href='/tags/mostpopular'>view most popular tags</a></h3>
 
 <head>
     <h3>Create an Album</h3>

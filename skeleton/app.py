@@ -375,10 +375,26 @@ def see_tagged_photos(tag, view):
 		return render_template('tags.html', tag=tag, userview=view, user_photos=user_pics, base64=base64)
 
 	elif view == 'all':
-		cursor.execute("SELECT DISTINCT data, Photos.photo_id, caption FROM Tagged, Photos WHERE tag_id = '{0}'".format(tag_id))
+		print("TAG ID IS", tag_id)
+		cursor.execute("SELECT P.data, P.photo_id, P.caption FROM PHOTOS P WHERE P.photo_id IN \
+		(SELECT photo_id FROM Tagged WHERE tag_id = %s)", tag_id)
 		all_pics = cursor.fetchall()
+		
 		return render_template('tags.html', tag=tag, all=view, all_photos=all_pics, base64=base64)
 
+# most popular tag function
+@app.route("/tags/<view>", methods=['GET', 'POST'])
+@flask_login.login_required
+def most_popular_tags(view):
+	print("VIEW IS", view)
+	cursor = conn.cursor()
+	cursor.execute("SELECT Tags.name, COUNT(*) AS photocount FROM Tagged, Tags \
+	WHERE Tags.tag_id = Tagged.tag_id GROUP BY Tags.name ORDER BY photocount DESC")
+		
+	# "SELECT COUNT(*), tag_id FROM Tagged GROUP BY tag_id ORDER BY tag_id DESC")
+	names = cursor.fetchall()
+	return render_template('tags.html', most_popular=view,names=names )
+	
 
 #default page
 @app.route("/", methods=['GET'])
