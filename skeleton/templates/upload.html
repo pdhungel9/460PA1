@@ -5,7 +5,7 @@
 {% endif %}
 
 {% if photos %}
-<h2>Here are your photos</h2>
+<h1>Here are your photos in {{album_name}}</h1>
     <ul>
     {% for photo in photos %}
 
@@ -22,31 +22,27 @@
     <title>Add photo </title>
     <body>
         <div class="title">
-            <h1>Upload a photo to the album {{album_name}} (with album id = {{album_id}} )</h1>
+            <h2>Upload a photo</h2>
         </div>
-            <form method="post" enctype="multipart/form-data" action="/upload">
+            <form method="post" enctype="multipart/form-data" action="/upload/{{album_name}}">
                 <label for="photo">Select photo:</label>
                 <input type="file" name="photo" required='true' /><br />
                 <label for="caption">Please caption:</label>
                 <input type="text" name="caption" required='true' /><br />
-                <label for="id">Album ID:</label>
-                <input type="text" name="album_id" required='true' /><br />
                 <input type="submit" value="Upload" />
             </form>
     </body>
 
     <body>
-    <h1>Delete a photo from {{album_name}}</h1>
-    <form method="post" enctype="multipart/form-data" action="/upload">
+    <h2>Delete a photo</h2>
+    <form method="post" enctype="multipart/form-data" action="/upload/{{album_name}}">
         <label for="photo">Enter photo id:</label>
         <input type="text" name="photo_id" required='true' /><br />
-        <label for="album">Enter album id:</label>
-        <input type="text" name="album_id" required='true' /><br />
         <input type="submit" value="Delete"/> 
     </form>
 
-    <h1>Add a tag to a photo</h1>
-    <form method="post" enctype="multipart/form-data" action="/upload">
+    <h2>Add a tag to a photo</h2>
+    <form method="post" enctype="multipart/form-data" action="/upload/{{album_name}}">
         <label for="photo">Enter photo id:</label>
         <input type="text" name="phototag_id" required='true' /><br />
         <label for="tags">Enter one photo tag:</label>

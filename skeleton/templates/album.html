@@ -3,12 +3,11 @@
 <h4>{{message}}</h4>
 {%endif%}
 
-
 {%if albums %}
 <h2>Here are your albums</h2>
     <ul>
       {% for album in albums %}
-        <li>{{album[0]}}</a></li>
+        <li><a href='/upload/{{album[0]}}'>{{album[0]}}</a></li>
       {% endfor %}
     </ul>
 {%else%}
@@ -19,10 +18,15 @@
 <h2>here are your tags</h2>
 <ul>
   {% for tag in tags %}
-    <li><a href='/tags/{{tag[0]}}'>{{tag[0]}}</a></li>
+    <li><a href='/tags/{{tag[0]}}/default'>{{tag[0]}}</a></li>
   {% endfor %}
 </ul>
+{% else %}
+<h3>you don't have any tagged photos yet</h3>
+
 {%endif%}
+
+<a href='/tags/mostpopular'>view most popular tags</a></h3>
 
 <head>
     <h3>Create an Album</h3>
@@ -41,15 +45,6 @@
       <form method="post" enctype="multipart/form-data" action="/album">
         <label for="album">Enter the name of the album you want to delete:</label>
         <input type="text" name="album_to_delete" required='true' />
-        <input type="submit" value="Submit" /> <br />
-      </form>
-    </body>
-
-    <h3>View and Manage Photos in an Album</h3>
-    <body>
-      <form method="post" enctype="multipart/form-data" action="/album">
-        <label for="album">enter name of album you'd like to view:</label>
-        <input type="text" name="view_album" required='true' />
         <input type="submit" value="Submit" /> <br />
       </form>
     </body>

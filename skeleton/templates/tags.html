@@ -1,27 +1,52 @@
-<h1>View Photos with Tag {{tag}}</h1>
-
-{% if user_photos %}
-<h2>Here are your photos tagged with {{tag}} </h2>
-    <ul>
-    {% for photo in user_photos %}
-
-        <li>{{photo[2]}}<br>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
-    {% endfor %}
-    
-    </ul>
-{% else %}
-<h2>You don't have any photos tagged with {{tag}} yet</h2>
+{%if tag %}
+    <h1>View Photos with Tag "{{tag}}"</h1>
 {% endif %}
 
-{% if all_photos %}
-<h2>Here are all photos in photoshare with tag {{tag}}</h2>
-    <ul>
-    {% for photo in all_photos %}
-
-        <li>{{photo[2]}}<br>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
-    {% endfor %}
-    
-    </ul>
+{% if default %}
+    <h3><a href='/tags/{{tag}}/userview'>view your photos tagged as "{{tag}}"</a></h3>
+    <h3><a href='/tags/{{tag}}/all'>view all photos tagged as "{{tag}}"</a></h3>
 {% endif %}
+
+
+{% if userview %}
+    {% if user_photos %}
+        <h2>Here are your photos tagged with {{tag}} </h2>
+        <ul>
+        {% for photo in user_photos %}
+            <li>{{photo[2]}}<br>
+            <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <h2>You don't have any photos tagged with {{tag}} yet</h2>
+    {% endif %}
+{% endif %}
+
+
+{% if all %}
+    {% if all_photos %}
+        <h2>Here are all photos in photoshare with tag {{tag}}</h2>
+        <ul>
+        {% for photo in all_photos %}
+            <li>{{photo[2]}}<br>
+            <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        {% endfor %}
+        </ul>
+    {% else %}
+    <h2>There aren't any photos in photoshare tagged with {{tag}} yet</h2>
+    {% endif %}
+{% endif %}
+
+
+{%if most_popular %}
+    {%if names is not none%}
+        <h2>Here are the most popular tags</h2>
+        <ul>
+        {% for name in names %}
+            <li> {{name[1]}} photos are tagged with <a href='/tags/{{name[0]}}/default'>{{name[0]}}</a></li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+{% endif %}
+
+<a href='/album'>Back to Albums</a></li>
