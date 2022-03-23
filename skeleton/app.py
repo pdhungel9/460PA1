@@ -242,6 +242,17 @@ def getFriendRecommendation(uid):
 	return cursor.fetchall()
 
 #comment helper functions
+def getCommentID(photo_id, uid):
+	cursor = conn.cursor()
+	cursor.execute('''SELECT comment_id FROM Comments WHERE photo_id = %s AND user_id = %s LIMIT 1''', (photo_id, uid))
+	c_id = cursor.fetchall()[0]
+	print("THIS IS THE COMMENT ID", c_id)
+	return c_id
+
+def getPhotoComments(photo_id):
+	cursor = conn.cursor()
+	cursor.execute('SELECT text FROM Comments WHERE photo_id = %s', (photo_id))
+	cursor.fetchall()
 
 @app.route('/profile')
 @flask_login.login_required
@@ -315,23 +326,22 @@ def display_friends():
 	return render_template('friends.html', friends=getUsersFriends(uid),recs = getFriendRecommendation(uid))
 
 #Comment Code
-@app.route('/comments', methods=['POST'])
+@app.route('/comments/<photo_id>', methods=['POST'])
 @flask_login.login_required
-def manage_comments():
+def manage_comments(photo_id):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	comment = request.form.get('comment')
-	#get photo id
-	#get comment id
-	#get text
+	#comment_id = getCommentID(photo_id, uid)
 	commenter = None
+	print("PHOTO ID IS", photo_id)
 	if comment != None:
-		cursor.execute('''INSERT INTO Comments (comment_id, photo_id, user_id, text) VALUES (%s, %s, %s, %s)''', (uid, friend_uid))
+		cursor.execute('''INSERT INTO Comments (photo_id, user_id, text, comment_id) VALUES (%s, %s, %s, %s)''', (photo_id, uid, comment, int(photo_id)+uid))
 		conn.commit()
-		return render_template('browse.html', name=flask_login.current_user.id, message= 'new comment made')
+		return render_template('browse.html', name=flask_login.current_user.id, message= 'new comment made', comms = getPhotoComments(photo_id))
 	else:
-		return render_template('browse.html', name=flask_login.current_user.id, message='Not a valid comment. Try again.')
+		return render_template('browse.html', name=flask_login.current_user.id, message='Not a valid comment. Try again.', comms = getPhotoComments(photo_id))
 
-	return render_template('browse.html', name=flask_login.current_user.id)
+	return render_template('browse.html', name=flask_login.current_user.id, comms = getPhotoComments(photo_id))
 
 
 @app.route('/upload/<album_name>', methods=['POST'])
