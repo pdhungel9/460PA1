@@ -227,11 +227,16 @@ def isValidUser(friend):
 #recommendation function
 def getFriendRecommendation(uid):
 	query = '''
-	 	SELECT first_name FROM 
+		SELECT email FROM 
 		(SELECT DISTINCT user_id2, COUNT(*)
 		FROM Friends 
 		WHERE user_id1 
 		IN 
+			(SELECT user_id2 
+			FROM Friends 
+			WHERE user_id1 = '{0}')
+		AND user_id2
+		NOT IN
 			(SELECT user_id2 
 			FROM Friends 
 			WHERE user_id1 = '{0}')
