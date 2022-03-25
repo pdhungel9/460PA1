@@ -145,7 +145,9 @@ def register_user():
 		return render_template('hello.html', name=user.id, message='Account Created!')
 	else:
 		print("couldn't find all tokens")
-		return flask.redirect(flask.url_for('register'))
+		#return flask.redirect(flask.url_for('register'))
+		#return render_template('hello.html', message='Try another email, this email is already linked to an account')
+		return "<a href='/register'>Try again. This email is already registered for another account</a>"
 
 def getUsersPhotos(uid, album_id):
 	cursor = conn.cursor()
@@ -267,7 +269,8 @@ def getUsersContibutionScore(uid):
  		FROM Comments
  		GROUP BY user_id) AS b ON a.user_id = b.user_id)
 	as sum LEFT JOIN USERS ON Users.user_id = sum.user_id
-	ORDER BY C DESC'''
+	ORDER BY C DESC
+	LIMIT 10'''
 
 	cursor = conn.cursor()
 	cursor.execute(query)
@@ -313,7 +316,6 @@ def manange_album():
 def display_contributions():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	contribution_scores = getUsersContibutionScore(uid)
-	print("SCORESSSSSSSSSSSSSSSSSSSSS", contribution_scores)
 	return render_template('contributions.html', name=flask_login.current_user.id, scores=contribution_scores)
 
 @app.route('/album', methods=['GET'])
