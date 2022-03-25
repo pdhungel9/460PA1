@@ -249,10 +249,12 @@ def getCommentID(photo_id, uid):
 	print("THIS IS THE COMMENT ID", c_id)
 	return c_id
 
-def getPhotoComments(photo_id):
+def getPhotoComments():
 	cursor = conn.cursor()
-	cursor.execute('SELECT text FROM Comments WHERE photo_id = %s', (photo_id))
-	cursor.fetchall()
+	cursor.execute('''SELECT first_name, photo_id, text FROM (SELECT photo_id, user_id, text FROM Comments) as info LEFT JOIN Users on Users.user_id = info.user_id;
+''')
+
+	return cursor.fetchall()
 
 @app.route('/profile')
 @flask_login.login_required
@@ -321,27 +323,44 @@ def manage_friends():
 @flask_login.login_required
 def display_friends():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	print("FRIEND RECS !!!!" , getFriendRecommendation(uid))
-	uid = getUserIdFromEmail(flask_login.current_user.id)
 	return render_template('friends.html', friends=getUsersFriends(uid),recs = getFriendRecommendation(uid))
+
+# browsing photos - for anyone visiting the site even if not registered
+@app.route('/browse', methods=['GET', 'POST'])
+def all_photos():
+	cursor = conn.cursor()
+	cursor.execute("SELECT data, photo_id, caption FROM Photos")
+	return render_template('browse.html', photos=cursor.fetchall(), comms=getPhotoComments(), base64=base64)
 
 #Comment Code
 @app.route('/comments/<photo_id>', methods=['POST'])
-@flask_login.login_required
 def manage_comments(photo_id):
-	uid = getUserIdFromEmail(flask_login.current_user.id)
+	cursor = conn.cursor()
+	cursor.execute('''SELECT data, photo_id, caption FROM Photos''')
+	all_photos = cursor.fetchall()
+	try:
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+	except:
+		uid = None
+		pass
 	comment = request.form.get('comment')
-	#comment_id = getCommentID(photo_id, uid)
-	commenter = None
-	print("PHOTO ID IS", photo_id)
-	if comment != None:
-		cursor.execute('''INSERT INTO Comments (photo_id, user_id, text, comment_id) VALUES (%s, %s, %s, %s)''', (photo_id, uid, comment, int(photo_id)+uid))
+	
+	if uid == None:
+		cursor.execute('''INSERT INTO Comments (photo_id, text) VALUES (%s, %s)''', (photo_id, comment))
 		conn.commit()
-		return render_template('browse.html', name=flask_login.current_user.id, message= 'new comment made', comms = getPhotoComments(photo_id))
-	else:
-		return render_template('browse.html', name=flask_login.current_user.id, message='Not a valid comment. Try again.', comms = getPhotoComments(photo_id))
+		message = 'new comment made!'
 
-	return render_template('browse.html', name=flask_login.current_user.id, comms = getPhotoComments(photo_id))
+	else:
+			# check that the user isn't commenting on their own photo
+		if cursor.execute('''SELECT * FROM PHOTOS WHERE photo_id = %s AND user_id = %s''', (photo_id, uid)):
+			message = 'Error - you cannot comment photos that you upload!'
+		else:
+			cursor.execute('''INSERT INTO Comments (photo_id, user_id, text) VALUES (%s, %s, %s)''', (photo_id, uid, comment))
+			conn.commit()
+			message = 'new comment made!'
+	
+	return render_template('browse.html', message=message, comms = getPhotoComments(), photos=all_photos, base64=base64)
+	
 
 
 @app.route('/upload/<album_name>', methods=['POST'])
@@ -396,13 +415,6 @@ def album_details(album_name):
 	a_id = getAlbumID(album_name, uid)
 	return render_template('upload.html', album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
 #end photo uploading code
-
-# browsing photos - for anyone visiting the site even if not registered
-@app.route('/browse', methods=['GET', 'POST'])
-def all_photos():
-	cursor = conn.cursor()
-	cursor.execute("SELECT data, photo_id, caption FROM Photos")
-	return render_template('browse.html', photos=cursor.fetchall(), base64=base64)
 
 # viewing tags 
 @app.route("/tags/<tag>/<view>", methods=['GET', 'POST'])

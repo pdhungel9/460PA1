@@ -1,3 +1,7 @@
+{% if message %}
+    {{message}}
+{%endif%}
+
 {% if photos %}
 <h2>Browse Photos Uploaded to Photoshare </h2>
 <ul>
@@ -14,10 +18,16 @@
     </form>
 
     {%if comms %}
-    <h2>Here are the comments</h2>
+    <h4>Comments:</h4>
     <ul>
         {% for comm in comms %}
-        <li>{{comm[0]}}</li>
+        {% if photo[1] == comm[1] %}
+        {% if comm[0] == None %}
+        <li> Guest commented {{comm[2]}}</li>
+        {% else %}
+        <li> {{comm[0]}} commented {{comm[2]}}</li>
+        {% endif %}
+        {% endif %}
         {% endfor %}
     </ul>
     {%endif%}
@@ -26,3 +36,5 @@
 {% else %}
 <h2>There haven't been any photos uploaded to photoshare yet. </h2>
 {% endif %}
+
+<a href='/'>Home</a></li></ul>
