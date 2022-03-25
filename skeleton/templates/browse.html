@@ -8,7 +8,8 @@
     {% for photo in photos %}
 
     <li>{{photo[2]}}<br>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}' />
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}' width="300" 
+        height="300"/>
     </li>
 
     <form method="post" enctype="multipart/form-data" action="/like/{{photo[1]}}">
@@ -51,6 +52,10 @@
 <h2>There haven't been any photos uploaded to photoshare yet. </h2>
 {% endif %}
 
-
+<h1>You may also like:</h1>
+<img src='https://post.medicalnewstoday.com/wp-content/uploads/sites/3/2020/02/322868_1100-800x825.jpg' width="300" 
+height="300"/>
+<img src='https://i.natgeofe.com/n/46b07b5e-1264-42e1-ae4b-8a021226e2d0/domestic-cat_thumb_square.jpg' width="300" 
+height="300"/> <br />
 
 <a href='/'>Home</a>
