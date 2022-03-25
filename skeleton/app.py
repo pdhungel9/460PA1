@@ -258,20 +258,20 @@ def getPhotoComments():
 #contribution helper function
 def getUsersContibutionScore(uid):
 	query = ''' 
-	SELECT a.user_id, a.cnt 
+	SELECT email FROM
+	(SELECT a.user_id, (a.cnt + b.cnt) as C
 	FROM (SELECT Photos.user_id, COUNT(*) as cnt
 		FROM Photos
 		GROUP BY user_id) AS a LEFT JOIN
 		(SELECT Comments.user_id, COUNT(*) as cnt
  		FROM Comments
- 		GROUP BY user_id) AS b ON a.user_id = b.user_id'''
+ 		GROUP BY user_id) AS b ON a.user_id = b.user_id)
+	as sum LEFT JOIN USERS ON Users.user_id = sum.user_id
+	ORDER BY C DESC'''
+
 	cursor = conn.cursor()
 	cursor.execute(query)
 	return cursor.fetchall()
-
-# JOIN (SELECT Comments.user_id, COUNT(*) as cnt
-# 		FROM Comments
-# 		GROUP BY user_id) b ON a.user_id = b.user_id'''
 
 @app.route('/profile')
 @flask_login.login_required
