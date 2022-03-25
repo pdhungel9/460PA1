@@ -218,6 +218,11 @@ def isValidUser(friend):
 	else:
 		return False
 
+def getLikes():
+	cursor = conn.cursor()
+	cursor.execute("SELECT photo_id, first_name FROM Likes, Users WHERE Users.user_id = Likes.user_id")
+	return cursor.fetchall()
+
 #recommendation function
 def getFriendRecommendation(uid):
 	query = '''
@@ -327,7 +332,28 @@ def display_friends():
 def all_photos():
 	cursor = conn.cursor()
 	cursor.execute("SELECT data, photo_id, caption FROM Photos")
-	return render_template('browse.html', photos=cursor.fetchall(), comms=getPhotoComments(), base64=base64)
+	return render_template('browse.html', photos=cursor.fetchall(), comms=getPhotoComments(), likes=getLikes(), base64=base64)
+
+@app.route('/like/<photo_id>', methods=['POST'])
+def like_photo(photo_id):
+	cursor = conn.cursor()
+	cursor.execute("SELECT data, photo_id, caption FROM Photos")
+	all_photos = cursor.fetchall()
+
+	try:
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+	except:
+		return render_template('browse.html', message="ERROR! You are not signed in so you cannot like any photos", photos=all_photos, comms=getPhotoComments(), likes=getLikes(), base64=base64)
+
+	# check that the user didn't already like the photo 
+	if cursor.execute("SELECT * FROM LIKES WHERE user_id = '{0}' AND photo_id = '{1}'".format(uid, photo_id)):
+		return render_template('browse.html', message="ERROR - You already liked this photo!", photos=all_photos, comms=getPhotoComments(), likes=getLikes(), base64=base64)
+	
+	# add it to the likes relation
+	cursor.execute("INSERT INTO Likes (user_id, photo_id) VALUES (%s, %s)", (uid, photo_id))
+	conn.commit()
+	return render_template('browse.html', message="success!", photos=all_photos, comms=getPhotoComments(), base64=base64, likes=getLikes())
+
 
 #Comment Code
 @app.route('/comments/<photo_id>', methods=['POST'])
@@ -356,7 +382,7 @@ def manage_comments(photo_id):
 			conn.commit()
 			message = 'new comment made!'
 	
-	return render_template('browse.html', message=message, comms = getPhotoComments(), photos=all_photos, base64=base64)
+	return render_template('browse.html', message=message, comms = getPhotoComments(), photos=all_photos, likes=getLikes(), base64=base64)
 	
 # deleting a photo OR adding a tag to a photo
 @app.route('/upload/<action>/<photo_id>/<album_name>/', methods=['POST'])
@@ -382,8 +408,6 @@ def delete_or_add_tag(action, photo_id, album_name):
 		conn.commit()
 		return render_template('upload.html', message='tag added!', album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
 
-		
-		
 
 @app.route('/upload/<album_name>', methods=['POST'])
 @flask_login.login_required
@@ -404,7 +428,6 @@ def upload_file(album_name):
 	return render_template('upload.html', name=flask_login.current_user.id, message='Photo uploaded!',
 		album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
 		
-	
 
 @app.route('/upload/<album_name>', methods=['GET'])
 @flask_login.login_required

@@ -11,6 +11,20 @@
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}' />
     </li>
 
+    <form method="post" enctype="multipart/form-data" action="/like/{{photo[1]}}">
+        <input type="submit" value="LIKE"/> 
+        </form>
+
+    {% if likes %}
+    
+    {% for like in likes %}
+        {% if photo[1] == like[0] %}
+        <h4> Liked By {{like[1]}}</h4>
+        {% endif %}
+    {% endfor %}
+   
+    {% endif %}
+
     <form action="/comments/{{photo[1]}}" method="post">
         <label for="search">Comment:</label>
         <input type="text" name="comment" required='true' />
@@ -36,6 +50,7 @@
 {% else %}
 <h2>There haven't been any photos uploaded to photoshare yet. </h2>
 {% endif %}
+
 
 
 <a href='/'>Home</a>
