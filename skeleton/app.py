@@ -198,12 +198,6 @@ def user_tags(uid):
 	(SELECT photo_id FROM Photos WHERE user_id = %s)''', uid)
 	return cursor.fetchall()
 
-def isValidPhotoid(photo_id, uid):
-	cursor = conn.cursor()
-	if cursor.execute('''SELECT * FROM Photos WHERE photo_id = %s AND user_id = %s''', (photo_id, uid)):
-	   return True
-	return False
-
 #Function to display friend list
 def getUsersFriends(uid):
 	cursor = conn.cursor()
@@ -364,7 +358,32 @@ def manage_comments(photo_id):
 	
 	return render_template('browse.html', message=message, comms = getPhotoComments(), photos=all_photos, base64=base64)
 	
+# deleting a photo OR adding a tag to a photo
+@app.route('/upload/<action>/<photo_id>/<album_name>/', methods=['POST'])
+@flask_login.login_required
+def delete_or_add_tag(action, photo_id, album_name):
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	a_id = getAlbumID(album_name, uid)
+	cursor = conn.cursor()
 
+	# delete a photo 
+	if action == 'delete':
+		cursor.execute('''DELETE FROM Photos WHERE photo_id = %s''', (photo_id))
+		conn.commit()
+		return render_template('upload.html', message='Photo Deleted', album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
+	
+	# add a tag
+	else: 
+		tag = request.form.get('tag')	
+		# call helper function
+		tag_id = doesTagExist(tag)
+		# then need to add photo, tag into the tagged DB 
+		cursor.execute('''INSERT INTO TAGGED (photo_id, tag_id) VALUES (%s, %s)''', (photo_id, tag_id))
+		conn.commit()
+		return render_template('upload.html', message='tag added!', album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
+
+		
+		
 
 @app.route('/upload/<album_name>', methods=['POST'])
 @flask_login.login_required
@@ -376,40 +395,16 @@ def upload_file(album_name):
 	# uploading a photo
 	
 	caption = request.form.get('caption')
-	if caption != None:
-		imgfile = request.files['photo']
-		photo_data =imgfile.read()
-		cursor.execute('''INSERT INTO Photos (data, user_id, caption, albums_id) VALUES (%s, %s, %s, %s)''', (photo_data, uid, caption, a_id))
-		conn.commit()
-		return render_template('upload.html', name=flask_login.current_user.id, message='Photo uploaded!',
+	
+	imgfile = request.files['photo']
+	photo_data =imgfile.read()
+	
+	cursor.execute('''INSERT INTO Photos (data, user_id, caption, albums_id) VALUES (%s, %s, %s, %s)''', (photo_data, uid, caption, a_id))
+	conn.commit()
+	return render_template('upload.html', name=flask_login.current_user.id, message='Photo uploaded!',
 		album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
 		
-	#deleting a photo
-	photo_id = request.form.get('photo_id')
-	if photo_id != None:
-		cursor.execute('''DELETE FROM Photos WHERE photo_id = %s''', (photo_id))
-		conn.commit()
-		return render_template('upload.html', message='photo deleted', album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
-
-	# adding a tag to a photo
-	photo_id = request.form.get('phototag_id')
-	if photo_id != None:
-		valid = isValidPhotoid(photo_id, uid)
-		if valid:
-			tag = request.form.get('tag')
-		
-			# call helper function
-			tag_id = doesTagExist(tag)
-
-			# then need to add photo, tag into the tagged DB 
-			cursor.execute('''INSERT INTO TAGGED (photo_id, tag_id) VALUES (%s, %s)''', (photo_id, tag_id))
-			conn.commit()
-		
-			return render_template('upload.html', message='tag added!', album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
-		else:
-			return render_template('upload.html', message='not a valid photo id, try again', album_name=album_name, photos=getUsersPhotos(uid,a_id), base64=base64)
-
-	return render_template('hello.html', message='photo deleted')
+	
 
 @app.route('/upload/<album_name>', methods=['GET'])
 @flask_login.login_required

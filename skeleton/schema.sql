@@ -90,3 +90,7 @@ SELECT * from Photos;
 SELECT * from Tagged;
 SELECT * from Tags;
 SELECT * from Comments;
+
+SELECT data, Photos.photo_id, caption FROM Photos WHERE Photos.photo_id 
+IN (SELECT Ta1.photo_id FROM Tags T1, Tagged Ta1, Tags T2, Tagged Ta2 WHERE 
+T1.tag_id = Ta1.tag_id AND T2.tag_id = Ta2.tag_id AND T1.tag_id = 1 AND T2.tag_id=2)
