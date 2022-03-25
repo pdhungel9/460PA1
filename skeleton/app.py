@@ -510,13 +510,23 @@ def tag_home():
 
 @app.route("/tag", methods=['POST'])
 def tag_home_two():
+	cursor = conn.cursor()
 	search_for = request.form.get('tag').split()
+	if len(search_for) == 1:
+		# search for that one tag
+		if cursor.execute("SELECT Tags.tag_id FROM Tagged, Tags WHERE Tagged.tag_id = Tags.tag_id AND Tags.name = '{0}'".format(search_for[0])):
+		   tag_id_1 = cursor.fetchone()[0]
+		   cursor.execute("SELECT data, Photos.photo_id, caption FROM Tagged, Photos WHERE Tagged.photo_id = Photos.photo_id AND tag_id = '{0}'".format(tag_id_1))
+		   results = cursor.fetchall()
+		   return render_template('tag.html', tag=search_for[0], photos=results, base64=base64)
+		else:
+			return render_template('tag.html', message="That tag doesn't exist in the DB")
+			 
 	if len(search_for) != 2:
 		return render_template('tag.html', message="Error! You must enter two tags separated by a space")
 	tag_id_1 = None
 	tag_id_2 = None
 
-	cursor = conn.cursor()
 
 	if cursor.execute("SELECT Tags.tag_id FROM Tagged, Tags WHERE Tagged.tag_id = Tags.tag_id AND Tags.name = '{0}'".format(search_for[0])):
 		tag_id_1 = cursor.fetchone()[0]
