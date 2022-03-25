@@ -255,6 +255,24 @@ def getPhotoComments():
 
 	return cursor.fetchall()
 
+#contribution helper function
+def getUsersContibutionScore(uid):
+	query = ''' 
+	SELECT email FROM
+	(SELECT a.user_id, (a.cnt + b.cnt) as C
+	FROM (SELECT Photos.user_id, COUNT(*) as cnt
+		FROM Photos
+		GROUP BY user_id) AS a LEFT JOIN
+		(SELECT Comments.user_id, COUNT(*) as cnt
+ 		FROM Comments
+ 		GROUP BY user_id) AS b ON a.user_id = b.user_id)
+	as sum LEFT JOIN USERS ON Users.user_id = sum.user_id
+	ORDER BY C DESC'''
+
+	cursor = conn.cursor()
+	cursor.execute(query)
+	return cursor.fetchall()
+
 @app.route('/profile')
 @flask_login.login_required
 def protected():
@@ -290,7 +308,14 @@ def manange_album():
 	# if they're not any options then just show their albums
 	return render_template('album.html', name=flask_login.current_user.id, albums=getUsersAlbums(uid))
 
-	
+@app.route('/contributions', methods=['GET'])
+@flask_login.login_required
+def display_contributions():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	contribution_scores = getUsersContibutionScore(uid)
+	print("SCORESSSSSSSSSSSSSSSSSSSSS", contribution_scores)
+	return render_template('contributions.html', name=flask_login.current_user.id, scores=contribution_scores)
+
 @app.route('/album', methods=['GET'])
 @flask_login.login_required
 def display_albums():
@@ -320,7 +345,7 @@ def manage_friends():
 @flask_login.login_required
 def display_friends():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('friends.html', friends=getUsersFriends(uid),recs = getFriendRecommendation(uid))
+	return render_template('friends.html', friends=getUsersFriends(uid), recs = getFriendRecommendation(uid))
 
 # browsing photos - for anyone visiting the site even if not registered
 @app.route('/browse', methods=['GET', 'POST'])

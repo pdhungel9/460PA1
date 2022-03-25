@@ -1,0 +1,12 @@
+{%if scores %}
+<h2>Here are the top users:</h2>
+<ul>
+    {% for score in scores %}
+    <li>{{score[0]}}</li>
+    {% endfor %}
+</ul>
+{%else%}
+<h2>There are no users with a score!</h2>
+{%endif%}
+
+<a href='/'>Home</a>
