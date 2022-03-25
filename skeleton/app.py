@@ -310,7 +310,6 @@ def manage_friends():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	search = request.form.get('search_friends')
 	
-	print(getFriendRecommendation(uid))
 	if search != None:
 		valid_user = isValidUser(search)
 		if valid_user:
@@ -321,7 +320,6 @@ def manage_friends():
 		else:
 			return render_template('friends.html', name=flask_login.current_user.id, message='Not a valid friend name. Try again.', friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
 	
-	print(getFriendRecommendation(uid))
 	return render_template('friends.html', name=flask_login.current_user.id, friends=getUsersFriends(uid), friend=search, recs = getFriendRecommendation(uid))
 
 @app.route('/friends', methods=['GET'])
@@ -444,7 +442,6 @@ def see_tagged_photos(tag, view):
 		return render_template('tags.html', tag=tag, userview=view, user_photos=user_pics, base64=base64)
 
 	elif view == 'all':
-		print("TAG ID IS", tag_id)
 		cursor.execute("SELECT P.data, P.photo_id, P.caption FROM PHOTOS P WHERE P.photo_id IN \
 		(SELECT photo_id FROM Tagged WHERE tag_id = %s)", tag_id)
 		all_pics = cursor.fetchall()
@@ -454,7 +451,6 @@ def see_tagged_photos(tag, view):
 # most popular tag function
 @app.route("/tags/<view>", methods=['GET', 'POST'])
 def most_popular_tags(view):
-	print("VIEW IS", view)
 	cursor = conn.cursor()
 	cursor.execute("SELECT Tags.name, COUNT(*) AS photocount FROM Tagged, Tags \
 	WHERE Tags.tag_id = Tagged.tag_id GROUP BY Tags.name ORDER BY photocount DESC")
@@ -484,21 +480,15 @@ def tag_home_two():
 		tag_id_2 = cursor.fetchone()[0]
 	
 	if tag_id_1 != None and tag_id_2 != None:
+		query = "SELECT data, Photos.photo_id, caption FROM Photos WHERE Photos.photo_id \
+		IN (SELECT Ta1.photo_id FROM Tags T1, Tagged Ta1, Tags T2, Tagged Ta2 WHERE \
+		T1.tag_id = Ta1.tag_id AND T2.tag_id = Ta2.tag_id AND T1.tag_id = '{0}' AND T2.tag_id='{1}')"
 
-		# photos for one tag:
-		#cursor.execute("SELECT P.data, P.photo_id, P.caption FROM PHOTOS P WHERE P.photo_id IN \
-		#(SELECT photo_id FROM Tagged WHERE tag_id = %s)", tag_id)
-		#all_pics = cursor.fetchall()
-		print("tag_id_1 is", tag_id_1, "tag_id_2 is", tag_id_2)
-		# find the photos that have 2 tags using self join
-		cursor.execute("SELECT Ta1.photo_id FROM Tags T1, Tagged Ta1, Tags T2, Tagged Ta2 \
-			WHERE T1.tag_id = Ta1.tag_id AND T2.tag_id = Ta2.tag_id AND T1.name = '%s' AND T2.name='%s'", (tag_id_1, tag_id_2))
-		
+		cursor.execute(query.format(tag_id_1, tag_id_2))
 		results = cursor.fetchall()
-		print("the results are", results)
+
 		return render_template('tag.html', tag=search_for, photos=results, base64=base64)
 	
-	print("THESE ARE THE TAG IDS", tag_id_1, tag_id_2)
 	if tag_id_1 == None or tag_id_2 == None:
 		message = "at least one of the tags you entered doesn't exist in the DB"
 	else:
