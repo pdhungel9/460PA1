@@ -62,7 +62,7 @@ CREATE TABLE Tagged(
 );
 
 CREATE TABLE Comments(
- comment_id INTEGER,
+ comment_id INTEGER AUTO_INCREMENT,
  user_id INTEGER NOT NULL,
  photo_id INTEGER NOT NULL,
  text VARCHAR (100),
@@ -89,3 +89,4 @@ SELECT * from Albums;
 SELECT * from Photos;
 SELECT * from Tagged;
 SELECT * from Tags;
+SELECT * from Comments;
